@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Loader2, Play, Pause, ChevronLeft } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -19,8 +19,20 @@ const Results = () => {
     const [progress, setProgress] = useState(0);
     const [duration, setDuration] = useState(0);
     const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+    
+    // Track previous status and jobId to detect transitions
+    const previousStatusRef = useRef<string | null>(null);
+    const currentJobIdRef = useRef<string | null>(null);
 
     const { data: jobData } = useJobStatus(jobId || null, !!jobId);
+
+    // Reset tracking when jobId changes
+    useEffect(() => {
+        if (jobId !== currentJobIdRef.current) {
+            currentJobIdRef.current = jobId || null;
+            previousStatusRef.current = null;
+        }
+    }, [jobId]);
 
     // Update lyrics and audio URL when job data changes
     useEffect(() => {
@@ -28,20 +40,29 @@ const Results = () => {
             if (jobData.lyrics) setLyrics(jobData.lyrics);
             if (jobData.audioUrl) setAudioUrl(getAudioUrl(jobData.audioUrl));
 
-            if (jobData.status === "completed") {
+            const previousStatus = previousStatusRef.current;
+            const currentStatus = jobData.status;
+
+            // Only show toast if status transitions from "processing" to "completed"
+            // This prevents showing toast when viewing completed songs from history
+            // (where previousStatus would be null and currentStatus is already "completed")
+            if (currentStatus === "completed" && previousStatus === "processing") {
                 toast({
                     title: "Song Created!",
                     description: "Your song is ready.",
                 });
             }
 
-            if (jobData.status === "failed") {
+            if (currentStatus === "failed") {
                 toast({
                     title: "Error",
                     description: jobData.error || "Failed to generate song.",
                     variant: "destructive",
                 });
             }
+
+            // Update previous status for next comparison
+            previousStatusRef.current = currentStatus;
         }
     }, [jobData, toast]);
 
@@ -99,7 +120,7 @@ const Results = () => {
         return null;
     }
 
-    // Loading state
+    // Loading state - only show for actual processing, not when loading completed history items
     if (!jobData || jobData.status === "processing") {
         return (
             <DashboardLayout>
