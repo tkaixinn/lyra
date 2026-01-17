@@ -40,12 +40,12 @@ export function SettingsDropdown({
         className="gap-2"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <SlidersHorizontal className="h-4 w-4" />
-        <span>Settings</span>
+        <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+        <span className="text-muted-foreground">Settings</span>
         {isExpanded ? (
-          <ChevronUp className="h-4 w-4 ml-auto" />
+          <ChevronUp className="h-4 w-4 ml-auto text-muted-foreground" />
         ) : (
-          <ChevronDown className="h-4 w-4 ml-auto" />
+          <ChevronDown className="h-4 w-4 ml-auto text-muted-foreground" />
         )}
       </Button>
 
