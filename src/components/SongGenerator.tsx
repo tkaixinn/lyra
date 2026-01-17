@@ -130,12 +130,6 @@ export function SongGenerator() {
                 </span>
                 <span className="hidden sm:inline font-medium">{s.label}</span>
               </div>
-              {index < steps.length - 1 && (
-                <ChevronRight className={cn(
-                  "w-5 h-5 mx-2",
-                  index < currentStepIndex ? "text-primary" : "text-muted-foreground/40"
-                )} />
-              )}
             </div>
           ))}
         </div>
