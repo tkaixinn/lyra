@@ -2,7 +2,16 @@ import { Calendar, Play, Timer } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import type { PlaceholderSong } from "@/data/placeholderSongs";
+
+export type PlaySongListItem = {
+  jobId: string;
+  title: string;
+  genre: string;
+  mood: string;
+  durationMs: number;
+  bpm: number;
+  createdAt: string;
+};
 
 const formatDate = (dateString: string) => {
   try {
@@ -24,7 +33,7 @@ const formatDuration = (durationMs: number) => {
 };
 
 type PlaySongCardProps = {
-  song: PlaceholderSong;
+  song: PlaySongListItem;
 };
 
 export function PlaySongCard({ song }: PlaySongCardProps) {
@@ -54,7 +63,7 @@ export function PlaySongCard({ song }: PlaySongCardProps) {
       </div>
 
       <Button variant="hero" size="sm" className="rounded-full" asChild>
-        <Link to={`/play/${song.id}`}>
+        <Link to={`/play/${song.jobId}`}>
           <Play className="w-4 h-4 mr-2" />
           Play
         </Link>

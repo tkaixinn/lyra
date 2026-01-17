@@ -2,20 +2,17 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { placeholderSongs } from "@/data/placeholderSongs";
+import { usePianoTilesChart } from "@/hooks/useSongGeneration";
+import type { PianoTileNote } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, ChevronLeft, ChevronRight, Pause, Play, RotateCcw, Trophy } from "lucide-react";
 
 type GamePhase = "ready" | "playing" | "ended";
 
-type Tile = {
-  id: string;
-  lane: number;
-  y: number;
-  height: number;
-  speed: number;
-};
+type ActiveNote = PianoTileNote & { id: string };
+
+const SPAWN_LEAD_MS = 2400;
+const HIT_WINDOW_MS = 160;
 
 const formatDuration = (durationMs: number) => {
   const totalSeconds = Math.round(durationMs / 1000);
@@ -34,34 +31,34 @@ const formatElapsed = (elapsedMs: number) => {
 const PianoTiles = () => {
   const { songId } = useParams<{ songId: string }>();
   const navigate = useNavigate();
-  const song = placeholderSongs.find((item) => item.id === songId);
+  const { data: chart, isLoading, isError } = usePianoTilesChart(songId ?? null, !!songId);
 
   const [phase, setPhase] = useState<GamePhase>("ready");
   const [hits, setHits] = useState(0);
   const [misses, setMisses] = useState(0);
-  const [elapsedMs, setElapsedMs] = useState(0);
+  const [currentTimeMs, setCurrentTimeMs] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
   const [activeLane, setActiveLane] = useState<number | null>(null);
   const laneTimeoutRef = useRef<number | null>(null);
   const boardRef = useRef<HTMLDivElement | null>(null);
   const [laneHeight, setLaneHeight] = useState(0);
-  const [tiles, setTiles] = useState<Tile[]>([]);
+  const [notes, setNotes] = useState<ActiveNote[]>([]);
   const animationFrameRef = useRef<number | null>(null);
-  const lastFrameRef = useRef<number | null>(null);
-
-  const beatMs = useMemo(() => {
-    if (!song) return 600;
-    return Math.max(200, Math.round(60000 / song.bpm));
-  }, [song]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const currentTimeRef = useRef(0);
 
   const hitLineOffset = 52;
-  const hitWindow = 48;
   const hitLineY = Math.max(0, laneHeight - hitLineOffset);
-  const baseSpeed = useMemo(() => {
-    if (!laneHeight) return 320;
-    const travelSeconds = Math.max(2.2, (beatMs / 1000) * 3);
-    return laneHeight / travelSeconds;
-  }, [beatMs, laneHeight]);
+  const baseTileHeight = useMemo(() => {
+    if (!laneHeight) return 56;
+    return Math.max(56, Math.round(laneHeight * 0.16));
+  }, [laneHeight]);
+
+  const buildActiveNotes = (noteList: PianoTileNote[]) =>
+    noteList.map((note, index) => ({
+      ...note,
+      id: `${note.tMs}-${note.lane}-${index}`,
+    }));
 
   useEffect(() => {
     if (!boardRef.current) return;
@@ -74,55 +71,63 @@ const PianoTiles = () => {
   }, []);
 
   useEffect(() => {
-    if (phase !== "playing") return;
-    const timer = window.setInterval(() => {
-      setElapsedMs((prev) => prev + 100);
-    }, 100);
-    return () => window.clearInterval(timer);
-  }, [phase]);
+    if (!chart) return;
 
-  useEffect(() => {
-    if (phase !== "playing" || !laneHeight) return;
-    const spawnTile = () => {
-      const height = Math.max(56, Math.round(laneHeight * 0.16));
-      const speedVariance = 0.85 + Math.random() * 0.3;
-      const tile: Tile = {
-        id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-        lane: Math.floor(Math.random() * 4),
-        y: -height,
-        height,
-        speed: baseSpeed * speedVariance,
-      };
-      setTiles((prev) => [...prev, tile]);
-    };
-
-    spawnTile();
-    const spawnInterval = Math.max(180, beatMs / playbackSpeed);
-    const interval = window.setInterval(spawnTile, spawnInterval);
-    return () => window.clearInterval(interval);
-  }, [phase, beatMs, baseSpeed, laneHeight, playbackSpeed]);
-
-  useEffect(() => {
-    if (phase !== "playing" || !song) return;
-    if (elapsedMs >= song.durationMs) {
-      setElapsedMs(song.durationMs);
-      setPhase("ended");
+    // Validate chart has valid data
+    if (!chart.durationMs || chart.durationMs <= 0) {
+      console.error('Invalid chart: durationMs must be positive', chart);
+      return;
     }
-  }, [elapsedMs, phase, song]);
+
+    if (!Array.isArray(chart.notes)) {
+      console.error('Invalid chart: notes must be an array', chart);
+      return;
+    }
+
+    setNotes(buildActiveNotes(chart.notes));
+    setCurrentTimeMs(0);
+    currentTimeRef.current = 0;
+    setHits(0);
+    setMisses(0);
+    setPhase("ready");
+  }, [chart]);
 
   useEffect(() => {
-    if (phase !== "playing" || !laneHeight) return;
+    if (!chart?.audioUrl) return;
+    const audio = new Audio(chart.audioUrl);
+    audio.preload = "auto";
+    audioRef.current = audio;
+
+    const handleEnded = () => setPhase("ended");
+    audio.addEventListener("ended", handleEnded);
+
+    return () => {
+      audio.pause();
+      audio.removeEventListener("ended", handleEnded);
+      if (audioRef.current === audio) {
+        audioRef.current = null;
+      }
+    };
+  }, [chart?.audioUrl]);
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+    audioRef.current.playbackRate = playbackSpeed;
+  }, [playbackSpeed]);
+
+  useEffect(() => {
+    if (phase !== "playing") return;
     const handleKeyDown = (event: KeyboardEvent) => {
       const laneIndex = ["1", "2", "3", "4"].indexOf(event.key);
       if (laneIndex === -1) return;
-      setTiles((prev) => {
+      const timeMs = currentTimeRef.current;
+      setNotes((prev) => {
         let bestIndex = -1;
         let bestDistance = Number.POSITIVE_INFINITY;
-        prev.forEach((tile, index) => {
-          if (tile.lane !== laneIndex) return;
-          const tileCenter = tile.y + tile.height / 2;
-          const distance = Math.abs(tileCenter - hitLineY);
-          if (distance <= hitWindow && distance < bestDistance) {
+        prev.forEach((note, index) => {
+          if (note.lane !== laneIndex) return;
+          const distance = Math.abs(note.tMs - timeMs);
+          if (distance <= HIT_WINDOW_MS && distance < bestDistance) {
             bestDistance = distance;
             bestIndex = index;
           }
@@ -152,28 +157,27 @@ const PianoTiles = () => {
         window.clearTimeout(laneTimeoutRef.current);
       }
     };
-  }, [phase, hitLineY, hitWindow, laneHeight]);
+  }, [phase]);
 
   useEffect(() => {
-    if (phase !== "playing" || !laneHeight) return;
-    const updateTiles = (time: number) => {
-      if (lastFrameRef.current === null) {
-        lastFrameRef.current = time;
-      }
-      const delta = time - lastFrameRef.current;
-      lastFrameRef.current = time;
-      const deltaSeconds = delta / 1000;
+    if (phase !== "playing" || !chart) return;
+    const audio = audioRef.current;
+    if (!audio) return;
 
-      setTiles((prev) => {
+    let isActive = true;
+    const updateFromAudio = () => {
+      if (!isActive) return;
+      const timeMs = audio.currentTime * 1000;
+      currentTimeRef.current = timeMs;
+      setCurrentTimeMs(timeMs);
+      setNotes((prev) => {
         let missesToAdd = 0;
-        const next = prev.flatMap((tile) => {
-          const nextY = tile.y + tile.speed * deltaSeconds * playbackSpeed;
-          const tileCenter = nextY + tile.height / 2;
-          if (tileCenter > hitLineY + hitWindow) {
+        const next = prev.filter((note) => {
+          if (timeMs > note.tMs + HIT_WINDOW_MS) {
             missesToAdd += 1;
-            return [];
+            return false;
           }
-          return [{ ...tile, y: nextY }];
+          return true;
         });
         if (missesToAdd > 0) {
           setMisses((current) => current + missesToAdd);
@@ -181,20 +185,37 @@ const PianoTiles = () => {
         return next;
       });
 
-      animationFrameRef.current = window.requestAnimationFrame(updateTiles);
+      if (audio.ended || timeMs >= chart.durationMs) {
+        setPhase("ended");
+        audio.pause();
+        return;
+      }
+
+      animationFrameRef.current = window.requestAnimationFrame(updateFromAudio);
     };
 
-    animationFrameRef.current = window.requestAnimationFrame(updateTiles);
+    animationFrameRef.current = window.requestAnimationFrame(updateFromAudio);
     return () => {
+      isActive = false;
       if (animationFrameRef.current) {
         window.cancelAnimationFrame(animationFrameRef.current);
       }
       animationFrameRef.current = null;
-      lastFrameRef.current = null;
     };
-  }, [phase, hitLineY, hitWindow, laneHeight, playbackSpeed]);
+  }, [phase, chart]);
 
-  if (!song) {
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
+          <h2 className="text-2xl font-semibold">Loading chart...</h2>
+          <p className="text-muted-foreground">Preparing your piano tiles run.</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!chart || isError) {
     return (
       <DashboardLayout>
         <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
@@ -211,19 +232,52 @@ const PianoTiles = () => {
     );
   }
 
-  const progress = Math.min(elapsedMs / song.durationMs, 1);
+  const progress = chart.durationMs > 0
+    ? Math.min(currentTimeMs / chart.durationMs, 1)
+    : 0;
   const accuracy = hits + misses > 0 ? Math.round((hits / (hits + misses)) * 100) : 0;
 
   const handleStart = () => {
-    setHits(0);
-    setMisses(0);
-    setElapsedMs(0);
-    setTiles([]);
-    setPhase("playing");
+    if (!chart) return;
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    // Helper to start the game
+    const startGameNow = () => {
+      setHits(0);
+      setMisses(0);
+      setNotes(buildActiveNotes(chart.notes));
+
+      audio.currentTime = 0;
+      audio.playbackRate = playbackSpeed;
+      audio.play().catch(() => {});
+
+      // Use requestAnimationFrame to ensure timing sync happens
+      // on the same frame as the first "playing" render
+      requestAnimationFrame(() => {
+        const initialTimeMs = audio.currentTime * 1000;
+        currentTimeRef.current = initialTimeMs;
+        setCurrentTimeMs(initialTimeMs);
+        setPhase("playing");
+      });
+    };
+
+    // Check if audio is ready (HTMLMediaElement.HAVE_CURRENT_DATA = 2)
+    if (audio.readyState < 2) {
+      const handleCanPlay = () => {
+        audio.removeEventListener('canplay', handleCanPlay);
+        startGameNow();
+      };
+      audio.addEventListener('canplay', handleCanPlay);
+      return;
+    }
+
+    startGameNow();
   };
 
   const handlePause = () => {
     setPhase("ended");
+    audioRef.current?.pause();
   };
 
   const decreasePlaybackSpeed = () => {
@@ -260,15 +314,35 @@ const PianoTiles = () => {
                     <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-primary/15 to-transparent" />
                     <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-primary/20 to-transparent" />
 
-                    {tiles
-                      .filter((tile) => tile.lane === laneIndex)
-                      .map((tile) => (
+                  {notes
+                      .filter((note) => note.lane === laneIndex)
+                      .map((note) => {
+                        const spawnTimeMs = note.tMs - SPAWN_LEAD_MS;
+                        const progressRatio =
+                          (currentTimeMs - spawnTimeMs) / SPAWN_LEAD_MS;
+                        if (progressRatio < 0 || progressRatio > 1.2) return null;
+                        const longNoteHeight = note.durationMs
+                          ? Math.min(
+                              Math.max(
+                                (note.durationMs / SPAWN_LEAD_MS) * laneHeight,
+                                baseTileHeight
+                              ),
+                              laneHeight * 0.5
+                            )
+                          : baseTileHeight;
+                        // Tiles start at top and move down to hit line
+                        // When progressRatio = 0: y = -height (just entering from top)
+                        // When progressRatio = 1: y = hitLineY - height (tile bottom at hit line)
+                        const travelDistance = hitLineY + longNoteHeight;
+                        const y = progressRatio * travelDistance - longNoteHeight;
+                        return (
                         <div
-                          key={tile.id}
+                          key={note.id}
                           className="absolute left-1/2 -translate-x-1/2 w-[70%] rounded-2xl border border-primary/40 bg-primary/30 shadow-soft"
-                          style={{ top: tile.y, height: tile.height }}
+                          style={{ top: y, height: longNoteHeight }}
                         />
-                      ))}
+                        );
+                      })}
 
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[80%] h-1.5 rounded-full bg-primary/40" />
                     <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-10 h-10 rounded-xl border border-border bg-background/70 flex items-center justify-center text-sm font-semibold text-muted-foreground">
@@ -282,7 +356,7 @@ const PianoTiles = () => {
                 <span>Hits: <span className="text-foreground font-semibold">{hits}</span></span>
                 <span>Misses: <span className="text-foreground font-semibold">{misses}</span></span>
                 <span className="font-mono text-foreground">
-                  {formatElapsed(elapsedMs)} / {formatDuration(song.durationMs)}
+                  {formatElapsed(currentTimeMs)} / {formatDuration(chart.durationMs)}
                 </span>
               </div>
 
@@ -328,7 +402,7 @@ const PianoTiles = () => {
                   <div className="space-y-2">
                     <h2 className="text-2xl font-semibold">Run complete</h2>
                     <p className="text-muted-foreground">
-                      {formatElapsed(elapsedMs)} played • {accuracy}% accuracy
+                      {formatElapsed(currentTimeMs)} played • {accuracy}% accuracy
                     </p>
                   </div>
                   <div className="grid grid-cols-2 gap-3 text-sm">

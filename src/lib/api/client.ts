@@ -1,5 +1,12 @@
 import { API_BASE_URL } from './constants';
-import { GenerateSongRequest, GenerateSongResponse, JobStatusResponse, HistorySong, DeleteSongResponse } from './types';
+import {
+  GenerateSongRequest,
+  GenerateSongResponse,
+  JobStatusResponse,
+  HistorySong,
+  DeleteSongResponse,
+  PianoTilesChart,
+} from './types';
 
 const MOOD_TO_TEMPO: Record<string, string> = {
   joyful: 'upbeat',
@@ -82,6 +89,21 @@ export async function deleteSong(id: string): Promise<DeleteSongResponse> {
   }
 
   return response.json();
+}
+
+export async function getPianoTilesChart(jobId: string): Promise<PianoTilesChart> {
+  const response = await fetch(`${API_BASE_URL}/api/piano-tiles/${jobId}`);
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Failed to fetch chart: ${response.statusText}`);
+  }
+
+  const chart: PianoTilesChart = await response.json();
+  return {
+    ...chart,
+    audioUrl: getAudioUrl(chart.audioUrl),
+  };
 }
 
 export async function transcribeAudio(audio: Blob): Promise<{ text: string }> {

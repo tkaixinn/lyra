@@ -47,3 +47,22 @@ export interface HistorySong {
 export interface DeleteSongResponse {
   success: boolean;
 }
+
+export interface PianoTileNote {
+  tMs: number;
+  lane: number;
+  durationMs?: number;
+}
+
+export interface PianoTilesChart {
+  jobId: string;
+  title?: string;
+  genre?: string;
+  mood?: string;
+  durationMs: number;
+  bpm: number;
+  lanes: number;
+  audioUrl: string;
+  notes: PianoTileNote[];
+  createdAt?: string;
+}

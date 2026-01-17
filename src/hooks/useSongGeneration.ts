@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { generateSong, getJobStatus, getHistory, deleteSong } from '../lib/api/client';
+import { generateSong, getJobStatus, getHistory, deleteSong, getPianoTilesChart } from '../lib/api/client';
 import { GenerateSongRequest, JobStatusResponse } from '../lib/api/types';
 import { POLL_INTERVAL_MS } from '../lib/api/constants';
 
@@ -41,5 +41,14 @@ export function useDeleteSong() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['history'] });
     },
+  });
+}
+
+export function usePianoTilesChart(jobId: string | null, enabled: boolean) {
+  return useQuery({
+    queryKey: ['pianoTilesChart', jobId],
+    queryFn: () => getPianoTilesChart(jobId!),
+    enabled: enabled && !!jobId,
+    retry: 2,
   });
 }
