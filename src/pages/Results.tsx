@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from "react";
-import { Loader2, Play, Pause, ChevronLeft } from "lucide-react";
+import { Loader2, Play, Pause, ChevronLeft, ChevronRight } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ const Results = () => {
     const [duration, setDuration] = useState(0);
     const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
     const [wordTimings, setWordTimings] = useState<WordTiming[]>([]);
+    const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
     
     // Track previous status and jobId to detect transitions
     const previousStatusRef = useRef<string | null>(null);
@@ -74,6 +75,7 @@ const Results = () => {
     useEffect(() => {
         if (audioUrl) {
             const audio = new Audio(audioUrl);
+            audio.playbackRate = playbackSpeed;
             setAudioElement(audio);
 
             audio.addEventListener('loadedmetadata', () => setDuration(audio.duration));
@@ -86,6 +88,13 @@ const Results = () => {
             };
         }
     }, [audioUrl]);
+    
+    // Update playback rate when speed changes
+    useEffect(() => {
+        if (audioElement) {
+            audioElement.playbackRate = playbackSpeed;
+        }
+    }, [playbackSpeed, audioElement]);
 
     const lyricTokens = useMemo(() => {
         if (!lyrics) return [];
@@ -136,6 +145,14 @@ const Results = () => {
         const minutes = Math.floor(time / 60);
         const seconds = Math.floor(time % 60);
         return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    };
+
+    const decreasePlaybackSpeed = () => {
+        setPlaybackSpeed(prev => Math.max(0.25, prev - 0.25));
+    };
+
+    const increasePlaybackSpeed = () => {
+        setPlaybackSpeed(prev => Math.min(2.0, prev + 0.25));
     };
 
     const handleNewSong = () => {
@@ -255,8 +272,26 @@ const Results = () => {
                         {/* Controls */}
                         <div className="flex items-center justify-center">
                             <div className="flex items-center gap-4">
+                                <Button 
+                                    size="icon" 
+                                    variant="ghost"
+                                    className="h-10 w-10" 
+                                    onClick={decreasePlaybackSpeed}
+                                    aria-label="Decrease playback speed"
+                                >
+                                    <ChevronLeft className="h-5 w-5" />
+                                </Button>
                                 <Button size="icon" className="h-12 w-12 rounded-full shadow-lg" onClick={togglePlay}>
                                     {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 ml-1" />}
+                                </Button>
+                                <Button 
+                                    size="icon" 
+                                    variant="ghost"
+                                    className="h-10 w-10" 
+                                    onClick={increasePlaybackSpeed}
+                                    aria-label="Increase playback speed"
+                                >
+                                    <ChevronRight className="h-5 w-5" />
                                 </Button>
                             </div>
                         </div>
