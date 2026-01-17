@@ -158,6 +158,21 @@
   .animate-wave {
     animation: wave 2s ease-in-out infinite;
   }
+
+  .animate-glow {
+    animation: glow 2.5s ease-in-out infinite;
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 5px hsla(176, 52%, 35%, 0.1);
+    border-color: transparent;
+  }
+  50% {
+    box-shadow: 0 0 15px hsla(176, 52%, 35%, 0.4);
+    border-color: hsla(176, 52%, 35%, 0.3);
+  }
 }
 
 @keyframes float {

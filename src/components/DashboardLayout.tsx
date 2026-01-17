@@ -3,7 +3,7 @@ import { AppSidebar } from "./AppSidebar"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={false}>
       <AppSidebar />
       <SidebarInset className="soft-gradient">
         <header className="flex h-16 shrink-0 items-center gap-2 px-4">

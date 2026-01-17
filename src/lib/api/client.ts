@@ -11,18 +11,28 @@ const MOOD_TO_TEMPO: Record<string, string> = {
 };
 
 export async function generateSong(data: GenerateSongRequest): Promise<GenerateSongResponse> {
-  const tempo = MOOD_TO_TEMPO[data.mood.toLowerCase()] || 'moderate';
-  
+  // Only include tempo if mood is provided
+  const tempo = data.mood ? (MOOD_TO_TEMPO[data.mood.toLowerCase()] || 'moderate') : undefined;
+
+  // Build request body with only provided fields
+  const requestBody: { prompt: string; genre?: string; tempo?: string } = {
+    prompt: data.prompt,
+  };
+
+  if (data.genre) {
+    requestBody.genre = data.genre;
+  }
+
+  if (tempo) {
+    requestBody.tempo = tempo;
+  }
+
   const response = await fetch(`${API_BASE_URL}/api/generate`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      prompt: data.prompt,
-      genre: data.genre,
-      tempo: tempo,
-    }),
+    body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {

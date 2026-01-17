@@ -2,8 +2,8 @@ export type JobStatus = 'processing' | 'completed' | 'failed';
 
 export interface GenerateSongRequest {
   prompt: string;
-  genre: string;
-  mood: string;
+  genre?: string;
+  mood?: string;
 }
 
 export interface GenerateSongResponse {
