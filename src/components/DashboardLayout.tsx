@@ -1,4 +1,4 @@
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar } from "./AppSidebar"
 
 const SIDEBAR_STATE_COOKIE = "sidebar:state";
@@ -26,10 +26,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <SidebarProvider defaultOpen={defaultOpen}>
       <AppSidebar />
       <SidebarInset className="soft-gradient">
-        <header className="flex h-16 shrink-0 items-center gap-2 px-4">
-          <SidebarTrigger className="-ml-1" />
-        </header>
-        <main className="flex-1 h-[calc(100dvh-4rem)] overflow-hidden">
+        <main className="flex-1 h-[calc(100dvh)] overflow-hidden">
              {children}
         </main>
       </SidebarInset>
