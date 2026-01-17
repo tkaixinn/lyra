@@ -1,11 +1,12 @@
-import { useState } from "react";
-import { ArrowRight, Sparkles, ChevronDown, ChevronUp, Music2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowRight, Sparkles, ChevronDown, ChevronUp, Music2, Mic, Square, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useGenerateSong } from "@/hooks/useSongGeneration";
+import { transcribeAudio } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
 const GENRES = ["Lo-Fi", "Pop", "Jazz", "Rock", "Classical", "Ambient"];
@@ -23,10 +24,139 @@ const Dashboard = () => {
   const [mood, setMood] = useState("");
   const [isGenreOpen, setIsGenreOpen] = useState(false);
   const [isMoodOpen, setIsMoodOpen] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+  const shouldTranscribeRef = useRef(true);
 
   const { toast } = useToast();
   const navigate = useNavigate();
   const generateMutation = useGenerateSong();
+
+  useEffect(() => {
+    return () => {
+      shouldTranscribeRef.current = false;
+      if (mediaRecorderRef.current?.state && mediaRecorderRef.current.state !== "inactive") {
+        mediaRecorderRef.current.stop();
+      }
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+    };
+  }, []);
+
+  const stopStream = () => {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+  };
+
+  const getRecorderMimeType = () => {
+    if (typeof MediaRecorder === "undefined") return "";
+    const types = [
+      "audio/webm;codecs=opus",
+      "audio/webm",
+      "audio/ogg;codecs=opus",
+      "audio/ogg",
+      "audio/wav",
+    ];
+    return types.find((type) => MediaRecorder.isTypeSupported(type)) || "";
+  };
+
+  const handleMicClick = async () => {
+    if (isTranscribing) return;
+
+    if (isRecording) {
+      const recorder = mediaRecorderRef.current;
+      if (recorder && recorder.state !== "inactive") {
+        recorder.stop();
+      }
+      return;
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      toast({
+        title: "Microphone unavailable",
+        description: "Your browser does not support audio recording.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      audioChunksRef.current = [];
+
+      const mimeType = getRecorderMimeType();
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      const recorderMimeType = recorder.mimeType || mimeType || "audio/webm";
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = async () => {
+        if (!shouldTranscribeRef.current) {
+          stopStream();
+          return;
+        }
+
+        setIsRecording(false);
+        stopStream();
+
+        const blob = new Blob(audioChunksRef.current, {
+          type: recorderMimeType,
+        });
+
+        if (!blob.size) {
+          toast({
+            title: "No audio captured",
+            description: "Try recording again and speak clearly.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        setIsTranscribing(true);
+        try {
+          const { text } = await transcribeAudio(blob);
+          const trimmed = text.trim();
+          if (!trimmed) {
+            toast({
+              title: "No transcription detected",
+              description: "Try again or speak a little longer.",
+              variant: "destructive",
+            });
+            return;
+          }
+          setPrompt((current) => (current ? `${current.trim()} ${trimmed}` : trimmed));
+        } catch (error) {
+          toast({
+            title: "Transcription failed",
+            description: error instanceof Error ? error.message : "Unable to transcribe audio.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsTranscribing(false);
+        }
+      };
+
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setIsRecording(true);
+    } catch (error) {
+      stopStream();
+      toast({
+        title: "Microphone permission denied",
+        description: "Allow microphone access to use voice input.",
+        variant: "destructive",
+      });
+      console.error("[Dashboard] Microphone error:", error);
+    }
+  };
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
@@ -39,6 +169,7 @@ const Dashboard = () => {
   };
 
   const isReady = prompt.trim() && !generateMutation.isPending;
+  const isMicBusy = isTranscribing || generateMutation.isPending;
 
   return (
     <DashboardLayout>
@@ -79,18 +210,46 @@ const Dashboard = () => {
                 ))}
               </div>
 
-              {/* Submit Button - Bottom Right */}
-              <Button 
-                size="icon" 
-                className={cn(
-                  "absolute bottom-4 right-4 h-10 w-10 rounded-full transition-all duration-300 shadow-md",
-                  isReady ? "opacity-100 scale-100" : "opacity-40 scale-90"
-                )}
-                onClick={handleGenerate}
-                disabled={!isReady}
-              >
-                {generateMutation.isPending ? <Sparkles className="h-5 w-5 animate-spin" /> : <ArrowRight className="h-5 w-5" />}
-              </Button>
+              <div className="absolute bottom-4 right-4 flex items-center gap-2">
+                <Button
+                  size="icon"
+                  className={cn(
+                    "h-10 w-10 rounded-full transition-all duration-300 shadow-md",
+                    isRecording
+                      ? "bg-red-500 text-white hover:bg-red-500/90"
+                      : "bg-primary text-primary-foreground hover:bg-primary/90",
+                    isMicBusy ? "opacity-70" : "opacity-100"
+                  )}
+                  onClick={handleMicClick}
+                  disabled={isMicBusy}
+                  aria-label={isRecording ? "Stop recording" : "Start recording"}
+                >
+                  {isTranscribing ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : isRecording ? (
+                    <Square className="h-5 w-5" />
+                  ) : (
+                    <Mic className="h-5 w-5" />
+                  )}
+                </Button>
+
+                <Button
+                  size="icon"
+                  className={cn(
+                    "h-10 w-10 rounded-full transition-all duration-300 shadow-md",
+                    isReady ? "opacity-100" : "opacity-40"
+                  )}
+                  onClick={handleGenerate}
+                  disabled={!isReady}
+                  aria-label="Generate song"
+                >
+                  {generateMutation.isPending ? (
+                    <Sparkles className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <ArrowRight className="h-5 w-5" />
+                  )}
+                </Button>
+              </div>
             </div>
 
             {/* Selectors */}

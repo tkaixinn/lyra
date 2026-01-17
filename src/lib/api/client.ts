@@ -83,6 +83,24 @@ export async function deleteSong(id: string): Promise<DeleteSongResponse> {
   return response.json();
 }
 
+export async function transcribeAudio(audio: Blob): Promise<{ text: string }> {
+  const contentType = audio.type || 'audio/webm';
+  const response = await fetch(`${API_BASE_URL}/api/transcribe`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': contentType,
+    },
+    body: audio,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Failed to transcribe audio: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
 export function getAudioUrl(path: string): string {
   if (path.startsWith('http')) return path;
   return `${API_BASE_URL}${path}`;
