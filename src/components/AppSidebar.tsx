@@ -1,4 +1,4 @@
-import { Home, History, Music2 } from "lucide-react"
+import { Gamepad2, Home, History, Music2 } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -23,6 +23,11 @@ const items = [
     title: "History",
     url: "/history",
     icon: History,
+  },
+  {
+    title: "Play",
+    url: "/play",
+    icon: Gamepad2,
   },
 ]
 
@@ -72,7 +77,7 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild 
-                    isActive={location.pathname === item.url} 
+                    isActive={location.pathname === item.url || location.pathname.startsWith(`${item.url}/`)} 
                     size="lg" 
                     tooltip={item.title}
                     className="text-base group-data-[collapsible=icon]:justify-center"
