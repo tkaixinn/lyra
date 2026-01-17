@@ -37,9 +37,6 @@ const History = () => {
               Listen back to your generated songs and memories.
             </p>
           </div>
-          <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
-            Refresh
-          </Button>
         </div>
 
         {isLoading ? (

@@ -1,9 +1,29 @@
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "./AppSidebar"
 
+const SIDEBAR_STATE_COOKIE = "sidebar:state";
+
+function getSidebarDefaultOpen() {
+  if (typeof document === "undefined") {
+    return false;
+  }
+
+  const cookie = document.cookie
+    .split("; ")
+    .find((entry) => entry.startsWith(`${SIDEBAR_STATE_COOKIE}=`));
+
+  if (!cookie) {
+    return false;
+  }
+
+  return cookie.split("=")[1] === "true";
+}
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const defaultOpen = getSidebarDefaultOpen();
+
   return (
-    <SidebarProvider defaultOpen={false}>
+    <SidebarProvider defaultOpen={defaultOpen}>
       <AppSidebar />
       <SidebarInset className="soft-gradient">
         <header className="flex h-16 shrink-0 items-center gap-2 px-4">
