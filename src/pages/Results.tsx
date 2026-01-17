@@ -163,6 +163,11 @@ const Results = () => {
     return (
         <DashboardLayout>
             <div className="relative flex flex-col h-full animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="absolute top-4 left-4 md:top-6 md:left-6 z-20">
+                    <Button variant="ghost" size="sm" onClick={handleNewSong} className="text-muted-foreground hover:text-foreground">
+                        <ChevronLeft className="mr-2 h-4 w-4" /> New Song
+                    </Button>
+                </div>
                 {/* Scrollable Lyrics Area */}
                 <div className="flex-1 overflow-y-auto p-6 md:p-12 text-center">
                     <div className="max-w-2xl mx-auto space-y-8 pb-48">
@@ -196,18 +201,12 @@ const Results = () => {
                         </div>
 
                         {/* Controls */}
-                        <div className="flex items-center justify-between">
-                            <Button variant="ghost" size="sm" onClick={handleNewSong} className="text-muted-foreground hover:text-foreground">
-                                <ChevronLeft className="mr-2 h-4 w-4" /> New Song
-                            </Button>
-
+                        <div className="flex items-center justify-center">
                             <div className="flex items-center gap-4">
                                 <Button size="icon" className="h-12 w-12 rounded-full shadow-lg" onClick={togglePlay}>
                                     {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 ml-1" />}
                                 </Button>
                             </div>
-
-                            <div className="w-[100px]" /> {/* Spacer for centering */}
                         </div>
                     </div>
                 </div>

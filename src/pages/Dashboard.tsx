@@ -1,16 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Sparkles, ChevronDown, ChevronUp, Music2, Mic, Square, Loader2 } from "lucide-react";
+import { ArrowRight, Sparkles, Music2, Mic, Square, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
+import { SettingsDropdown } from "@/components/SettingsDropdown";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useGenerateSong } from "@/hooks/useSongGeneration";
 import { transcribeAudio } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
-
-const GENRES = ["Lo-Fi", "Pop", "Jazz", "Rock", "Classical", "Ambient"];
-const MOODS = ["Happy", "Melancholic", "Energetic", "Calm", "Dark", "Romantic"];
 
 const SUGGESTIONS = [
   "A cyberpunk synthwave track",
@@ -22,8 +20,6 @@ const Dashboard = () => {
   const [prompt, setPrompt] = useState("");
   const [genre, setGenre] = useState("");
   const [mood, setMood] = useState("");
-  const [isGenreOpen, setIsGenreOpen] = useState(false);
-  const [isMoodOpen, setIsMoodOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
 
@@ -252,67 +248,14 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Selectors */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 px-2">
-              <div className="space-y-3">
-                <button
-                  onClick={() => setIsGenreOpen(!isGenreOpen)}
-                  className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-widest hover:text-foreground transition-colors"
-                >
-                  <span>Genre</span>
-                  {isGenreOpen ? (
-                    <ChevronUp className="w-4 h-4" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4" />
-                  )}
-                </button>
-                {isGenreOpen && (
-                  <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                    {GENRES.map((g) => (
-                      <button
-                        key={g}
-                        onClick={() => setGenre(g)}
-                        className={cn(
-                          "px-4 py-2 rounded-full text-sm font-medium transition-all border",
-                          genre === g ? "bg-primary text-primary-foreground border-primary" : "bg-secondary/20 border-transparent hover:bg-secondary/50"
-                        )}
-                      >
-                        {g}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-3">
-                <button
-                  onClick={() => setIsMoodOpen(!isMoodOpen)}
-                  className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-widest hover:text-foreground transition-colors"
-                >
-                  <span>Mood</span>
-                  {isMoodOpen ? (
-                    <ChevronUp className="w-4 h-4" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4" />
-                  )}
-                </button>
-                {isMoodOpen && (
-                  <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                    {MOODS.map((m) => (
-                      <button
-                        key={m}
-                        onClick={() => setMood(m)}
-                        className={cn(
-                          "px-4 py-2 rounded-full text-sm font-medium transition-all border",
-                          mood === m ? "bg-primary text-primary-foreground border-primary" : "bg-secondary/20 border-transparent hover:bg-secondary/50"
-                        )}
-                      >
-                        {m}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+            {/* Settings Dropdown */}
+            <div className="flex justify-start mt-4">
+              <SettingsDropdown
+                genre={genre}
+                mood={mood}
+                onGenreChange={setGenre}
+                onMoodChange={setMood}
+              />
             </div>
           </div>
         </div>
