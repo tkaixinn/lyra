@@ -115,15 +115,15 @@ export function AudioPlayer({ audioUrl, isGenerating }: AudioPlayerProps) {
       <div className="px-6 py-4 border-b border-border bg-muted/50">
         <h3 className="text-xl font-semibold text-foreground">Your Song</h3>
       </div>
-      
-      <div className="p-8">
+
+      <div className="p-8 pb-32">
         <audio ref={audioRef} src={audioUrl} preload="metadata" />
-        
+
         {/* Waveform visualization */}
         <div className="flex items-center justify-center mb-8">
           <MusicWave isPlaying={isPlaying} className="h-16" />
         </div>
-        
+
         {/* Progress bar */}
         <div className="mb-6">
           <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -137,30 +137,30 @@ export function AudioPlayer({ audioUrl, isGenerating }: AudioPlayerProps) {
             <span>{formatTime(duration)}</span>
           </div>
         </div>
-        
-        {/* Controls */}
-        <div className="flex items-center justify-center gap-4">
-          <Button variant="outline" size="icon" onClick={handleRestart}>
-            <RotateCcw className="w-5 h-5" />
-          </Button>
-          
-          <Button
-            variant="hero"
-            size="xl"
-            onClick={togglePlay}
-            className="rounded-full w-16 h-16"
-          >
-            {isPlaying ? (
-              <Pause className="w-7 h-7" />
-            ) : (
-              <Play className="w-7 h-7 ml-1" />
-            )}
-          </Button>
-          
-          <Button variant="outline" size="icon" onClick={handleDownload}>
-            <Download className="w-5 h-5" />
-          </Button>
-        </div>
+      </div>
+
+      {/* Controls - Sticky to bottom */}
+      <div className="sticky bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border p-6 flex items-center justify-center gap-4">
+        <Button variant="outline" size="icon" onClick={handleRestart}>
+          <RotateCcw className="w-5 h-5" />
+        </Button>
+
+        <Button
+          variant="hero"
+          size="xl"
+          onClick={togglePlay}
+          className="rounded-full w-16 h-16"
+        >
+          {isPlaying ? (
+            <Pause className="w-7 h-7" />
+          ) : (
+            <Play className="w-7 h-7 ml-1" />
+          )}
+        </Button>
+
+        <Button variant="outline" size="icon" onClick={handleDownload}>
+          <Download className="w-5 h-5" />
+        </Button>
       </div>
     </div>
   );
