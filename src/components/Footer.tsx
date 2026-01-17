@@ -8,7 +8,7 @@ export function Footer() {
           Crafted with <Heart className="w-4 h-4 text-accent fill-accent" /> for Parkinson's patients
         </p>
         <p>
-          © {new Date().getFullYear()} MelodyMind. Music heals.
+          © {new Date().getFullYear()} Lyra. Music heals.
         </p>
       </div>
     </footer>

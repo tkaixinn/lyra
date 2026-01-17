@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Sparkles, Music, Heart } from "lucide-react";
 
 export function HeroSection() {
+  const [genre, setGenre] = useState(null);
   return (
     <section className="text-center py-12 px-4">
       <div className="max-w-3xl mx-auto">
@@ -26,6 +28,29 @@ export function HeroSection() {
         <p className="text-body-lg text-muted-foreground max-w-2xl mx-auto mb-8 text-balance">
           How are you feeling today? 
         </p>
+
+        <div className="mb-8">
+  <p className="text-sm text-muted-foreground mb-3">
+    Choose a music style
+  </p>
+
+  <div className="flex flex-wrap justify-center gap-3">
+    {["Calm", "Classical", "Soft Pop", "Instrumental", "Jazz"].map((g) => (
+      <button
+        key={g}
+        onClick={() => setGenre(g)}
+        className={`px-5 py-3 rounded-xl text-sm font-medium shadow-soft transition
+          ${
+            genre === g
+              ? "bg-primary text-primary-foreground"
+              : "bg-card text-foreground hover:bg-muted"
+          }`}
+      >
+        {g}
+      </button>
+    ))}
+  </div>
+</div>
         
         <div className="flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2 bg-card px-4 py-2 rounded-full shadow-soft">

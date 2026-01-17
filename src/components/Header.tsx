@@ -9,7 +9,7 @@ export function Header() {
             <Music2 className="w-6 h-6 text-primary-foreground" />
           </div>
           <span className="font-serif text-2xl font-semibold text-foreground">
-            MelodyMind
+            Lyra
           </span>
         </div>
         
