@@ -1,5 +1,11 @@
 export type JobStatus = 'processing' | 'completed' | 'failed';
 
+export interface WordTiming {
+  word: string;
+  start: number;
+  end: number;
+}
+
 export interface GenerateSongRequest {
   prompt: string;
   genre?: string;
@@ -16,6 +22,7 @@ export interface JobStatusResponse {
   status: JobStatus;
   lyrics?: string;
   audioUrl?: string;
+  wordTimings?: WordTiming[];
   error?: string;
   createdAt: string;
   updatedAt: string;
@@ -29,6 +36,7 @@ export interface HistorySong {
   genre?: string;
   mood?: string;
   tempo?: string;
+  wordTimings?: WordTiming[];
   status: JobStatus;
   error?: string;
   created_at: string;

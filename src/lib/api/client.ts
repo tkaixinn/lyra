@@ -62,10 +62,11 @@ export async function getHistory(): Promise<HistorySong[]> {
     throw new Error(errorData.error || `Failed to fetch history: ${response.statusText}`);
   }
 
-  const data: HistorySong[] = await response.json();
+  const data: Array<HistorySong & { word_timings?: HistorySong['wordTimings'] }> = await response.json();
   // Map audioUrl for each song
   return data.map(song => ({
     ...song,
+    wordTimings: song.wordTimings ?? song.word_timings ?? undefined,
     audioUrl: `${API_BASE_URL}/api/audio/${song.job_id}`
   }));
 }

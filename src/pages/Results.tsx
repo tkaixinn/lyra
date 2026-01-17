@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { Loader2, Play, Pause, ChevronLeft } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -7,6 +7,7 @@ import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { useJobStatus } from "@/hooks/useSongGeneration";
 import { getAudioUrl } from "@/lib/api/client";
+import type { WordTiming } from "@/lib/api/types";
 
 const Results = () => {
     const { jobId } = useParams<{ jobId: string }>();
@@ -19,6 +20,7 @@ const Results = () => {
     const [progress, setProgress] = useState(0);
     const [duration, setDuration] = useState(0);
     const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+    const [wordTimings, setWordTimings] = useState<WordTiming[]>([]);
     
     // Track previous status and jobId to detect transitions
     const previousStatusRef = useRef<string | null>(null);
@@ -31,14 +33,16 @@ const Results = () => {
         if (jobId !== currentJobIdRef.current) {
             currentJobIdRef.current = jobId || null;
             previousStatusRef.current = null;
+            setWordTimings([]);
         }
     }, [jobId]);
 
-    // Update lyrics and audio URL when job data changes
+    // Update lyrics, audio URL, and word timings when job data changes
     useEffect(() => {
         if (jobData) {
             if (jobData.lyrics) setLyrics(jobData.lyrics);
             if (jobData.audioUrl) setAudioUrl(getAudioUrl(jobData.audioUrl));
+            if (jobData.wordTimings) setWordTimings(jobData.wordTimings);
 
             const previousStatus = previousStatusRef.current;
             const currentStatus = jobData.status;
@@ -82,6 +86,34 @@ const Results = () => {
             };
         }
     }, [audioUrl]);
+
+    const lyricTokens = useMemo(() => {
+        if (!lyrics) return [];
+        const tokens = lyrics.split(/(\s+)/);
+        let wordIndex = 0;
+
+        return tokens.map((token, index) => {
+            const isWhitespace = /^\s+$/.test(token);
+            if (isWhitespace) {
+                return { token, isWhitespace: true, key: `ws-${index}` };
+            }
+            const assignedIndex = wordIndex;
+            wordIndex += 1;
+            return { token, isWhitespace: false, wordIndex: assignedIndex, key: `word-${index}` };
+        });
+    }, [lyrics]);
+
+    // Check if a word has been sung (progress >= word start time)
+    const isWordSung = useMemo(() => {
+        if (!wordTimings.length) return new Set<number>();
+        const sungWords = new Set<number>();
+        wordTimings.forEach((timing, index) => {
+            if (progress >= timing.start) {
+                sungWords.add(index);
+            }
+        });
+        return sungWords;
+    }, [progress, wordTimings]);
 
     const togglePlay = () => {
         if (!audioElement) return;
@@ -179,7 +211,27 @@ const Results = () => {
                         </div>
 
                         <div className="whitespace-pre-wrap text-2xl md:text-3xl font-medium leading-relaxed text-foreground/90 font-serif">
-                            {lyrics || "Lyrics not available."}
+                            {!lyrics && "Lyrics not available."}
+                            {!!lyrics && wordTimings.length === 0 && lyrics}
+                            {!!lyrics && wordTimings.length > 0 && (
+                                <span>
+                                    {lyricTokens.map((token) => {
+                                        if (token.isWhitespace) {
+                                            return <span key={token.key}>{token.token}</span>;
+                                        }
+
+                                        const isSung = token.wordIndex !== undefined && isWordSung.has(token.wordIndex);
+                                        return (
+                                            <span
+                                                key={token.key}
+                                                className={`transition-all duration-200 ${isSung ? "text-primary font-bold" : "text-foreground/70"}`}
+                                            >
+                                                {token.token}
+                                            </span>
+                                        );
+                                    })}
+                                </span>
+                            )}
                         </div>
                     </div>
                 </div>

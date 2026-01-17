@@ -54,17 +54,19 @@ const History = () => {
             <Button onClick={() => refetch()}>Try Again</Button>
           </div>
         ) : !songs || songs.length === 0 ? (
-          <div className="bg-muted/30 border border-dashed border-border rounded-2xl p-12 text-center max-w-md mx-auto">
-            <div className="w-16 h-16 bg-background rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
-              <Music className="h-8 w-8 text-muted-foreground" />
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="bg-muted/30 border border-dashed border-border rounded-2xl p-12 text-center max-w-md">
+              <div className="w-16 h-16 bg-background rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+                <Music className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-xl font-semibold">No songs yet</h3>
+              <p className="text-muted-foreground mt-2 mb-8">
+                Start generating music to see your creations appear here.
+              </p>
+              <Button asChild>
+                <Link to="/dashboard">Generate My First Song</Link>
+              </Button>
             </div>
-            <h3 className="text-xl font-semibold">No songs yet</h3>
-            <p className="text-muted-foreground mt-2 mb-8">
-              Start generating music to see your creations appear here.
-            </p>
-            <Button asChild>
-              <Link to="/dashboard">Generate My First Song</Link>
-            </Button>
           </div>
         ) : (
           <div className="space-y-2">
