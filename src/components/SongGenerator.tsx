@@ -1,87 +1,113 @@
-import { useState } from "react";
-import { ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Wand2, ChevronRight } from "lucide-react";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
+import { GenreSelector } from "./GenreSelector";
+import { MoodSelector } from "./MoodSelector";
 import { LyricsDisplay } from "./LyricsDisplay";
 import { AudioPlayer } from "./AudioPlayer";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useGenerateSong, useJobStatus } from "@/hooks/useSongGeneration";
+import { getAudioUrl } from "@/lib/api/client";
 
-type Step = "prompt" | "result";
+type Step = "prompt" | "genre" | "mood" | "result";
 
 export function SongGenerator() {
   const [step, setStep] = useState<Step>("prompt");
   const [prompt, setPrompt] = useState("");
+  const [genre, setGenre] = useState("");
+  const [mood, setMood] = useState("");
   const [lyrics, setLyrics] = useState("");
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [isGeneratingLyrics, setIsGeneratingLyrics] = useState(false);
-  const [isGeneratingMusic, setIsGeneratingMusic] = useState(false);
+  const [jobId, setJobId] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const generateMutation = useGenerateSong();
+  const { data: jobData } = useJobStatus(jobId, step === "result");
+
+  const isGeneratingLyrics = jobId !== null && (!jobData || (jobData.status === "processing" && !jobData.lyrics));
+  const isGeneratingMusic = jobId !== null && (!jobData || (jobData.status === "processing" && !jobData.audioUrl));
+
+  useEffect(() => {
+    if (jobData) {
+      if (jobData.lyrics) {
+        setLyrics(jobData.lyrics);
+      }
+      
+      if (jobData.audioUrl) {
+        setAudioUrl(getAudioUrl(jobData.audioUrl));
+      }
+
+      if (jobData.status === "completed" && jobId) {
+        toast({
+          title: "Song Created!",
+          description: "Your personalized song is ready to play.",
+        });
+        // Clear jobId from local state once complete to stop polling if necessary, 
+        // but hook handles it too.
+      }
+
+      if (jobData.status === "failed") {
+        toast({
+          title: "Error",
+          description: jobData.error || "Failed to generate song. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
+  }, [jobData, jobId, toast]);
 
   const steps = [
     { id: "prompt", label: "Your Story", number: 1 },
-    { id: "result", label: "Your Song", number: 2 },
+    { id: "genre", label: "Genre", number: 2 },
+    { id: "mood", label: "Mood", number: 3 },
+    { id: "result", label: "Your Song", number: 4 },
   ];
 
   const currentStepIndex = steps.findIndex((s) => s.id === step);
 
   const handleNext = () => {
-    if (prompt.trim()) {
+    if (step === "prompt" && prompt.trim()) {
+      setStep("genre");
+    } else if (step === "genre" && genre) {
+      setStep("mood");
+    } else if (step === "mood" && mood) {
       handleGenerate();
     }
   };
 
   const handleGenerate = async () => {
     setStep("result");
-    setIsGeneratingLyrics(true);
-    setIsGeneratingMusic(true);
+    setLyrics("");
+    setAudioUrl(null);
+    setJobId(null);
 
-    // Simulate lyrics generation
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    const sampleLyrics = `[Verse 1]
-In the quiet morning light,
-I find my strength to fight,
-Every step I take today,
-Leads me on my healing way.
-
-[Chorus]
-We rise, we shine, we move as one,
-Like flowers reaching for the sun,
-Through every challenge, every mile,
-We keep on dancing, keep our smile.
-
-[Verse 2]
-The music flows through me,
-Setting my spirit free,
-With every beat and every rhyme,
-I'm reclaiming my own time.
-
-[Bridge]
-Hand in hand, heart to heart,
-Every ending is a start,
-In this melody we share,
-We find hope everywhere.
-
-[Outro]
-Keep on moving, keep on strong,
-Together we belong.`;
-    setLyrics(sampleLyrics);
-    setIsGeneratingLyrics(false);
-
-    // Simulate music generation
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    toast({
-      title: "Song Created!",
-      description: "Your personalized song is ready to play.",
-    });
-    setIsGeneratingMusic(false);
+    try {
+      const result = await generateMutation.mutateAsync({
+        prompt,
+        genre,
+        mood,
+      });
+      setJobId(result.jobId);
+    } catch (error) {
+      console.error("Error generating song:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to generate song. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleStartOver = () => {
     setStep("prompt");
     setPrompt("");
+    setGenre("");
+    setMood("");
     setLyrics("");
     setAudioUrl(null);
+    setJobId(null);
   };
 
   return (
@@ -104,6 +130,12 @@ Together we belong.`;
                 </span>
                 <span className="hidden sm:inline font-medium">{s.label}</span>
               </div>
+              {index < steps.length - 1 && (
+                <ChevronRight className={cn(
+                  "w-5 h-5 mx-2",
+                  index < currentStepIndex ? "text-primary" : "text-muted-foreground/40"
+                )} />
+              )}
             </div>
           ))}
         </div>
@@ -116,10 +148,11 @@ Together we belong.`;
                 Tell Us Your Story
               </h2>
               <p className="text-muted-foreground text-center mb-8 max-w-lg mx-auto">
-                Share a moment, feeling, or experience you’d like to express in a song.
+                Describe a memory, feeling, or moment you'd like to turn into a song. 
+                The more details you share, the more personal your song will be.
               </p>
               <Textarea
-                placeholder="Example: I want a song about feeling happy while listening to music."
+                placeholder="Example: I want a song about my morning walks in the garden with my grandchildren, watching the butterflies dance around the flowers..."
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 className="min-h-[160px] text-lg resize-none mb-8 rounded-xl border-2 border-border focus:border-primary bg-background"
@@ -132,8 +165,62 @@ Together we belong.`;
                   disabled={!prompt.trim()}
                   className="gap-2"
                 >
-                  Create My Song
+                  Continue
                   <ChevronRight className="w-5 h-5" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {step === "genre" && (
+            <div className="animate-fade-in">
+              <h2 className="font-serif text-3xl font-semibold text-foreground mb-4 text-center">
+                Choose Your Genre
+              </h2>
+              <p className="text-muted-foreground text-center mb-8">
+                Select the musical style that speaks to you.
+              </p>
+              <GenreSelector selected={genre} onSelect={setGenre} />
+              <div className="flex justify-center gap-4 mt-10">
+                <Button variant="outline" onClick={() => setStep("prompt")}>
+                  Back
+                </Button>
+                <Button
+                  variant="hero"
+                  size="lg"
+                  onClick={handleNext}
+                  disabled={!genre}
+                  className="gap-2"
+                >
+                  Continue
+                  <ChevronRight className="w-5 h-5" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {step === "mood" && (
+            <div className="animate-fade-in">
+              <h2 className="font-serif text-3xl font-semibold text-foreground mb-4 text-center">
+                Set the Mood
+              </h2>
+              <p className="text-muted-foreground text-center mb-8">
+                How do you want your song to feel?
+              </p>
+              <MoodSelector selected={mood} onSelect={setMood} />
+              <div className="flex justify-center gap-4 mt-10">
+                <Button variant="outline" onClick={() => setStep("genre")}>
+                  Back
+                </Button>
+                <Button
+                  variant="hero"
+                  size="lg"
+                  onClick={handleNext}
+                  disabled={!mood}
+                  className="gap-2"
+                >
+                  <Wand2 className="w-5 h-5" />
+                  Create My Song
                 </Button>
               </div>
             </div>
@@ -145,11 +232,14 @@ Together we belong.`;
                 <h2 className="font-serif text-3xl font-semibold text-foreground mb-2">
                   Your Personalized Song
                 </h2>
+                <p className="text-muted-foreground">
+                  {genre.charAt(0).toUpperCase() + genre.slice(1)} • {mood.charAt(0).toUpperCase() + mood.slice(1)}
+                </p>
               </div>
-
+              
               <LyricsDisplay lyrics={lyrics} isGenerating={isGeneratingLyrics} />
               <AudioPlayer audioUrl={audioUrl} isGenerating={isGeneratingMusic} />
-
+              
               {!isGeneratingLyrics && !isGeneratingMusic && (
                 <div className="flex justify-center pt-4">
                   <Button variant="outline" size="lg" onClick={handleStartOver}>
@@ -164,4 +254,3 @@ Together we belong.`;
     </section>
   );
 }
-
