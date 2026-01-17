@@ -95,12 +95,25 @@ export function AudioPlayer({ audioUrl, isGenerating }: AudioPlayerProps) {
     );
   }
 
-  if (!audioUrl) return null;
+  if (!audioUrl) {
+    return (
+      <div className="bg-card rounded-2xl p-8 shadow-soft border border-dashed border-border text-center">
+        <div className="flex items-center justify-center mb-4">
+          <MusicWave isPlaying={false} className="h-10 opacity-50" />
+        </div>
+        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Audio</p>
+        <p className="mt-3 text-lg font-semibold text-foreground">Playback will appear here.</p>
+        <p className="text-sm text-muted-foreground mt-2">
+          Generate a song to unlock the player controls.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-card rounded-2xl shadow-soft border border-border overflow-hidden animate-fade-in">
       <div className="px-6 py-4 border-b border-border bg-muted/50">
-        <h3 className="font-serif text-xl font-semibold text-foreground">Your Song</h3>
+        <h3 className="text-xl font-semibold text-foreground">Your Song</h3>
       </div>
       
       <div className="p-8">

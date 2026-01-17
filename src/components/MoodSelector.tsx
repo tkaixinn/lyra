@@ -1,12 +1,13 @@
 import { cn } from "@/lib/utils";
+import { Smile, Feather, CloudMoon, Sunrise, Heart, Sparkles } from "lucide-react";
 
 const moods = [
-  { id: "joyful", name: "Joyful", emoji: "😊", color: "bg-yellow-100 border-yellow-300" },
-  { id: "peaceful", name: "Peaceful", emoji: "🕊️", color: "bg-blue-100 border-blue-300" },
-  { id: "nostalgic", name: "Nostalgic", emoji: "💭", color: "bg-purple-100 border-purple-300" },
-  { id: "hopeful", name: "Hopeful", emoji: "🌅", color: "bg-orange-100 border-orange-300" },
-  { id: "grateful", name: "Grateful", emoji: "🙏", color: "bg-green-100 border-green-300" },
-  { id: "loving", name: "Loving", emoji: "💕", color: "bg-pink-100 border-pink-300" },
+  { id: "joyful", name: "Joyful", icon: Smile, description: "Bright and light" },
+  { id: "peaceful", name: "Peaceful", icon: Feather, description: "Soft and calm" },
+  { id: "nostalgic", name: "Nostalgic", icon: CloudMoon, description: "Warm memories" },
+  { id: "hopeful", name: "Hopeful", icon: Sunrise, description: "Open and lifted" },
+  { id: "grateful", name: "Grateful", icon: Heart, description: "Grounded warmth" },
+  { id: "loving", name: "Loving", icon: Sparkles, description: "Gentle glow" },
 ];
 
 interface MoodSelectorProps {
@@ -16,24 +17,37 @@ interface MoodSelectorProps {
 
 export function MoodSelector({ selected, onSelect }: MoodSelectorProps) {
   return (
-    <div className="flex flex-wrap gap-3 justify-center">
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
       {moods.map((mood) => {
+        const Icon = mood.icon;
         const isSelected = selected === mood.id;
-        
+
         return (
           <button
             key={mood.id}
             onClick={() => onSelect(mood.id)}
             className={cn(
-              "flex items-center gap-2 px-5 py-3 rounded-full border-2 transition-all duration-300",
-              "hover:scale-105 active:scale-95",
+              "flex items-center gap-3 p-4 rounded-2xl border transition-all duration-300 text-left",
+              "hover:-translate-y-0.5 hover:shadow-soft active:translate-y-0",
               isSelected
-                ? "border-primary bg-primary text-primary-foreground shadow-medium"
-                : "border-border bg-card hover:border-primary/50"
+                ? "border-primary bg-primary/10 shadow-glow"
+                : "border-border bg-card/70 hover:border-primary/40"
             )}
           >
-            <span className="text-xl">{mood.emoji}</span>
-            <span className="font-medium">{mood.name}</span>
+            <div
+              className={cn(
+                "p-2 rounded-xl transition-colors duration-300",
+                isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              )}
+            >
+              <Icon className="w-4 h-4" />
+            </div>
+            <div className="text-left">
+              <p className={cn("text-sm font-semibold", isSelected ? "text-primary" : "text-foreground")}>
+                {mood.name}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">{mood.description}</p>
+            </div>
           </button>
         );
       })}

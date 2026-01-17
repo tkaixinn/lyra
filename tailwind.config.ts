@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Outfit', 'sans-serif'],
-        serif: ['Crimson Pro', 'serif'],
+        sans: ["Space Grotesk", "sans-serif"],
+        serif: ["Space Grotesk", "sans-serif"],
       },
       fontSize: {
         'display': ['4rem', { lineHeight: '1.1', letterSpacing: '-0.02em' }],

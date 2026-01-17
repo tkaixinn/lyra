@@ -1,5 +1,4 @@
 import { Header } from "@/components/Header";
-import { HeroSection } from "@/components/HeroSection";
 import { SongGenerator } from "@/components/SongGenerator";
 import { Footer } from "@/components/Footer";
 
@@ -8,7 +7,6 @@ const Index = () => {
     <div className="min-h-screen flex flex-col soft-gradient">
       <Header />
       <main className="flex-1">
-        <HeroSection />
         <SongGenerator />
       </main>
       <Footer />

@@ -27,29 +27,29 @@ export function GenreSelector({ selected, onSelect }: GenreSelectorProps) {
             key={genre.id}
             onClick={() => onSelect(genre.id)}
             className={cn(
-              "flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all duration-300",
-              "hover:scale-[1.02] active:scale-[0.98]",
+              "flex flex-col items-start gap-3 p-5 rounded-2xl border transition-all duration-300 text-left",
+              "hover:-translate-y-0.5 hover:shadow-soft active:translate-y-0",
               isSelected
                 ? "border-primary bg-primary/10 shadow-glow"
-                : "border-border bg-card hover:border-primary/50 hover:bg-primary/5"
+                : "border-border bg-card/70 hover:border-primary/40 hover:bg-primary/5"
             )}
           >
             <div
               className={cn(
-                "p-3 rounded-xl transition-colors duration-300",
+                "p-2.5 rounded-xl transition-colors duration-300",
                 isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
               )}
             >
               <Icon className="w-6 h-6" />
             </div>
-            <div className="text-center">
+            <div className="text-left">
               <p className={cn(
-                "font-medium text-lg",
+                "font-semibold text-base",
                 isSelected ? "text-primary" : "text-foreground"
               )}>
                 {genre.name}
               </p>
-              <p className="text-sm text-muted-foreground">{genre.description}</p>
+              <p className="text-xs text-muted-foreground mt-1">{genre.description}</p>
             </div>
           </button>
         );

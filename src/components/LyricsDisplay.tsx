@@ -36,12 +36,22 @@ export function LyricsDisplay({ lyrics, isGenerating }: LyricsDisplayProps) {
     );
   }
 
-  if (!lyrics) return null;
+  if (!lyrics) {
+    return (
+      <div className="bg-card rounded-2xl p-8 shadow-soft border border-dashed border-border text-center">
+        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Lyrics</p>
+        <p className="mt-3 text-lg font-semibold text-foreground">Your lyrics will appear here.</p>
+        <p className="text-sm text-muted-foreground mt-2">
+          Fill in the details and generate to reveal your song.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-card rounded-2xl shadow-soft border border-border overflow-hidden animate-fade-in">
       <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/50">
-        <h3 className="font-serif text-xl font-semibold text-foreground">Your Song Lyrics</h3>
+        <h3 className="text-xl font-semibold text-foreground">Your Song Lyrics</h3>
         <Button
           variant="ghost"
           size="sm"
@@ -62,7 +72,7 @@ export function LyricsDisplay({ lyrics, isGenerating }: LyricsDisplayProps) {
         </Button>
       </div>
       <div className="p-8">
-        <pre className="whitespace-pre-wrap font-serif text-lg leading-relaxed text-foreground/90">
+        <pre className="whitespace-pre-wrap text-base sm:text-lg leading-relaxed text-foreground/90">
           {lyrics}
         </pre>
       </div>
