@@ -24,9 +24,7 @@ export function HeroSection() {
         </h1>
         
         <p className="text-body-lg text-muted-foreground max-w-2xl mx-auto mb-8 text-balance">
-          Transform your feelings and stories into personalized songs. 
-          Simply describe what's on your mind, choose a genre, and let us 
-          compose lyrics and melodies just for you.
+          How are you feeling today? 
         </p>
         
         <div className="flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
@@ -37,10 +35,6 @@ export function HeroSection() {
           <div className="flex items-center gap-2 bg-card px-4 py-2 rounded-full shadow-soft">
             <div className="w-2 h-2 rounded-full bg-accent" />
             <span>Custom Melodies</span>
-          </div>
-          <div className="flex items-center gap-2 bg-card px-4 py-2 rounded-full shadow-soft">
-            <div className="w-2 h-2 rounded-full bg-primary" />
-            <span>Therapeutic Design</span>
           </div>
         </div>
       </div>
