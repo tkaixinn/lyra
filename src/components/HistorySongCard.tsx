@@ -1,7 +1,6 @@
-import { useState, useRef, useEffect } from "react";
-import { Play, Pause, Trash2, Calendar, Mic2, ChevronDown, ChevronUp } from "lucide-react";
+import { Eye, Trash2, Calendar } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
-import { Card, CardContent, CardFooter, CardHeader } from "./ui/card";
 import { HistorySong } from "@/lib/api/types";
 import {
   AlertDialog,
@@ -22,48 +21,7 @@ interface HistorySongCardProps {
 }
 
 export function HistorySongCard({ song, onDelete }: HistorySongCardProps) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [isLyricsExpanded, setIsLyricsExpanded] = useState(false);
-  const audioRef = useRef<HTMLAudioElement>(null);
-
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const handleTimeUpdate = () => {
-      if (audio.duration) {
-        setProgress((audio.currentTime / audio.duration) * 100);
-      }
-    };
-
-    const handleEnded = () => {
-      setIsPlaying(false);
-      setProgress(0);
-    };
-
-    audio.addEventListener("timeupdate", handleTimeUpdate);
-    audio.addEventListener("ended", handleEnded);
-
-    return () => {
-      audio.removeEventListener("timeupdate", handleTimeUpdate);
-      audio.removeEventListener("ended", handleEnded);
-    };
-  }, []);
-
-  const togglePlay = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play().catch(err => {
-          console.error("Playback failed:", err);
-          setIsPlaying(false);
-        });
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
+  const navigate = useNavigate();
 
   const formatDate = (dateString: string) => {
     try {
@@ -78,75 +36,33 @@ export function HistorySongCard({ song, onDelete }: HistorySongCardProps) {
   };
 
   return (
-    <Card className="overflow-hidden border border-border bg-card shadow-sm hover:shadow-md transition-shadow">
-      <CardHeader className="p-4 pb-2">
-        <div className="flex justify-between items-start mb-2">
-          <Badge variant="secondary" className="capitalize">
-            {song.genre || "Unknown Genre"}
+    <div className="flex items-center justify-between gap-4 p-4 border border-border bg-card rounded-lg hover:shadow-md transition-shadow">
+      <div className="flex items-center gap-4 flex-1 min-w-0">
+        {song.genre && (
+          <Badge variant="secondary" className="capitalize shrink-0">
+            {song.genre}
           </Badge>
-          <div className="flex items-center text-xs text-muted-foreground">
-            <Calendar className="w-3 h-3 mr-1" />
-            {formatDate(song.created_at)}
-          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <h3 className="text-base font-semibold truncate">
+            {song.prompt}
+          </h3>
         </div>
-        <h3 className="text-lg font-bold line-clamp-2 leading-tight">
-          {song.prompt}
-        </h3>
-      </CardHeader>
+        <div className="flex items-center text-sm text-muted-foreground shrink-0">
+          <Calendar className="w-4 h-4 mr-1" />
+          {formatDate(song.created_at)}
+        </div>
+      </div>
       
-      <CardContent className="p-4 pt-0">
-        <audio ref={audioRef} src={song.audioUrl} preload="metadata" />
-        
-        <div className="mt-4 mb-4">
-          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-            <div
-              className="h-full bg-primary transition-all duration-150"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="w-full justify-between h-8 px-2 text-muted-foreground hover:text-foreground"
-            onClick={() => setIsLyricsExpanded(!isLyricsExpanded)}
-          >
-            <span className="flex items-center text-xs font-semibold uppercase tracking-wider">
-              <Mic2 className="w-3 h-3 mr-2" />
-              Lyrics
-            </span>
-            {isLyricsExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </Button>
-          
-          {isLyricsExpanded && (
-            <div className="mt-2 p-3 bg-muted/30 rounded-lg text-sm text-muted-foreground whitespace-pre-wrap max-h-40 overflow-y-auto animate-in fade-in slide-in-from-top-1 duration-200">
-              {song.lyrics}
-            </div>
-          )}
-        </div>
-      </CardContent>
-
-      <CardFooter className="p-4 pt-0 flex justify-between gap-2">
+      <div className="flex items-center gap-2 shrink-0">
         <Button
-          variant={isPlaying ? "outline" : "hero"}
+          variant="hero"
           size="sm"
-          onClick={togglePlay}
-          className="flex-1 rounded-full"
-          disabled={song.status !== 'completed'}
+          onClick={() => navigate(`/results/${song.job_id}`)}
+          className="rounded-full"
         >
-          {isPlaying ? (
-            <>
-              <Pause className="w-4 h-4 mr-2" />
-              Pause
-            </>
-          ) : (
-            <>
-              <Play className="w-4 h-4 mr-2 fill-current" />
-              {song.status === 'completed' ? 'Play' : 'Unavailable'}
-            </>
-          )}
+          <Eye className="w-4 h-4 mr-2" />
+          View
         </Button>
 
         <AlertDialog>
@@ -170,7 +86,7 @@ export function HistorySongCard({ song, onDelete }: HistorySongCardProps) {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
 }
