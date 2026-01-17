@@ -9,7 +9,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <header className="flex h-16 shrink-0 items-center gap-2 px-4">
           <SidebarTrigger className="-ml-1" />
         </header>
-        <main className="flex-1 h-[calc(100vh-4rem)] overflow-hidden">
+        <main className="flex-1 h-[calc(100dvh-4rem)] overflow-hidden">
              {children}
         </main>
       </SidebarInset>

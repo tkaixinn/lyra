@@ -200,10 +200,10 @@ export function CreateSongFlow() {
 
   // Result View
   return (
-    <div className="flex flex-col h-full animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="relative flex flex-col h-full animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Scrollable Lyrics Area */}
       <div className="flex-1 overflow-y-auto p-6 md:p-12 text-center">
-         <div className="max-w-2xl mx-auto space-y-8 pb-24">
+         <div className="max-w-2xl mx-auto space-y-8 pb-48">
             <div className="space-y-2">
                <h2 className="text-xl font-medium text-muted-foreground uppercase tracking-widest">{genre} • {mood}</h2>
                <div className="h-1 w-20 bg-primary/30 mx-auto rounded-full" />
@@ -216,7 +216,7 @@ export function CreateSongFlow() {
       </div>
 
       {/* Sticky Bottom Player */}
-      <div className="shrink-0 bg-background/80 backdrop-blur-lg border-t p-4 md:p-6 pb-8">
+      <div className="absolute bottom-0 left-0 right-0 z-10 bg-background/80 backdrop-blur-lg border-t p-4 md:p-6 pb-8">
         <div className="max-w-3xl mx-auto flex flex-col gap-4">
            {/* Progress Bar */}
            <div className="flex items-center gap-3 text-xs font-mono text-muted-foreground">
