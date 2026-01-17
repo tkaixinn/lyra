@@ -1,5 +1,5 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { generateSong, getJobStatus } from '../lib/api/client';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { generateSong, getJobStatus, getHistory, deleteSong } from '../lib/api/client';
 import { GenerateSongRequest, JobStatusResponse } from '../lib/api/types';
 import { POLL_INTERVAL_MS } from '../lib/api/constants';
 
@@ -22,5 +22,24 @@ export function useJobStatus(jobId: string | null, enabled: boolean) {
       return POLL_INTERVAL_MS;
     },
     retry: 3,
+  });
+}
+
+export function useHistory() {
+  return useQuery({
+    queryKey: ['history'],
+    queryFn: getHistory,
+    staleTime: 30000, // 30 seconds
+  });
+}
+
+export function useDeleteSong() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (id: string) => deleteSong(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['history'] });
+    },
   });
 }

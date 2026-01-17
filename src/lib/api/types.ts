@@ -20,3 +20,22 @@ export interface JobStatusResponse {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface HistorySong {
+  id: string;
+  job_id: string;
+  lyrics: string;
+  prompt: string;
+  genre?: string;
+  mood?: string;
+  tempo?: string;
+  status: JobStatus;
+  error?: string;
+  created_at: string;
+  updated_at: string;
+  audioUrl?: string;
+}
+
+export interface DeleteSongResponse {
+  success: boolean;
+}
