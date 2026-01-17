@@ -138,11 +138,10 @@ Together we belong.`;
                 Tell Us Your Story
               </h2>
               <p className="text-muted-foreground text-center mb-8 max-w-lg mx-auto">
-                Describe a memory, feeling, or moment you'd like to turn into a song. 
-                The more details you share, the more personal your song will be.
+                Share a moment, feeling, or experience you’d like to express in a song. 
               </p>
               <Textarea
-                placeholder="Example: I want a song about my morning walks in the garden with my grandchildren, watching the butterflies dance around the flowers..."
+                placeholder="Example: I want a song about feeling happy while listening to music."
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 className="min-h-[160px] text-lg resize-none mb-8 rounded-xl border-2 border-border focus:border-primary bg-background"
