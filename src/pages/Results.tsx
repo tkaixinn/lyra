@@ -185,7 +185,7 @@ const Results = () => {
                 </div>
 
                 {/* Sticky Bottom Player */}
-                <div className="absolute bottom-0 left-0 right-0 z-10 bg-background/80 backdrop-blur-lg border-t p-4 md:p-6 pb-8">
+                <div className="fixed bottom-0 left-0 right-0 z-10 bg-background/80 backdrop-blur-lg border-t p-4 md:p-6 pb-8">
                     <div className="max-w-3xl mx-auto flex flex-col gap-4">
                         {/* Progress Bar */}
                         <div className="flex items-center gap-3 text-xs font-mono text-muted-foreground">
